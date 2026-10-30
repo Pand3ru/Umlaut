@@ -2,6 +2,8 @@
 
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -9,10 +11,13 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-import {CHARACTER_GROUPS, selectCharacter} from './characters.js';
+import {CHARACTER_GROUPS, characterForKey, selectCharacter} from './characters.js';
+
+const OPEN_MENU_KEY = 'open-menu';
 
 export default class UmlautPanelExtension extends Extension {
     _indicator = null;
+    _settings = null;
     _signals = [];
 
     enable() {
@@ -21,6 +26,20 @@ export default class UmlautPanelExtension extends Extension {
 
         const indicator = new PanelMenu.Button(0.0, this.metadata.name, false);
         this._indicator = indicator;
+
+        const copyCharacter = text => {
+            try {
+                selectCharacter(
+                    text,
+                    value => St.Clipboard.get_default().set_text(
+                        St.ClipboardType.CLIPBOARD, value),
+                    () => indicator.menu.close()
+                );
+            } catch (error) {
+                console.error('Umlaut Panel: clipboard write failed', error);
+                Main.notifyError('Umlaut Panel', 'Could not copy the character. Try again.');
+            }
+        };
 
         try {
             indicator.name = 'umlaut-panel-indicator';
@@ -62,7 +81,7 @@ export default class UmlautPanelExtension extends Extension {
                 for (const character of group) {
                     const button = new St.Button({
                         label: character.text,
-                        accessible_name: `Copy ${character.name} (${character.text})`,
+                        accessible_name: `Copy ${character.name} (${character.text}), key ${character.key}`,
                         name: `umlaut-character-${character.text.codePointAt(0).toString(16)}`,
                         style_class: 'button umlaut-character-button',
                         can_focus: true,
@@ -71,36 +90,65 @@ export default class UmlautPanelExtension extends Extension {
                         x_expand: true,
                     });
                     row.add_child(button);
-                    const signalId = button.connect('clicked', () => {
-                        try {
-                            selectCharacter(
-                                character.text,
-                                text => St.Clipboard.get_default().set_text(
-                                    St.ClipboardType.CLIPBOARD, text),
-                                () => indicator.menu.close()
-                            );
-                        } catch (error) {
-                            console.error('Umlaut Panel: clipboard write failed', error);
-                            Main.notifyError('Umlaut Panel', 'Could not copy the character. Try again.');
-                        }
-                    });
+                    const signalId = button.connect('clicked', () => copyCharacter(character.text));
                     this._signals.push([button, signalId]);
                 }
             }
 
             indicator.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-            indicator.menu.addMenuItem(new PopupMenu.PopupMenuItem('Select a character to copy', {
+            indicator.menu.addMenuItem(new PopupMenu.PopupMenuItem('Press a, o, u or s · Shift for capitals', {
                 reactive: false,
                 can_focus: false,
             }));
+
+            // Typing a mapped letter while the popup is open copies its character.
+            const keyPressId = indicator.menu.actor.connect('key-press-event', (_actor, event) => {
+                const modifiers = Clutter.ModifierType.CONTROL_MASK | Clutter.ModifierType.MOD1_MASK;
+                if (event.get_state() & modifiers)
+                    return Clutter.EVENT_PROPAGATE;
+
+                const codePoint = Clutter.keysym_to_unicode(event.get_key_symbol());
+                const text = codePoint ? characterForKey(String.fromCodePoint(codePoint)) : null;
+                if (!text)
+                    return Clutter.EVENT_PROPAGATE;
+
+                copyCharacter(text);
+                return Clutter.EVENT_STOP;
+            });
+            this._signals.push([indicator.menu.actor, keyPressId]);
+
             Main.panel.addToStatusArea(this.uuid, indicator);
+
+            this._settings = this.getSettings();
+            Main.wm.addKeybinding(
+                OPEN_MENU_KEY,
+                this._settings,
+                Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
+                Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW,
+                () => this._toggleMenuFromKeyboard()
+            );
         } catch (error) {
             this.disable();
             throw error;
         }
     }
 
+    _toggleMenuFromKeyboard() {
+        const menu = this._indicator?.menu;
+        if (!menu)
+            return;
+
+        menu.toggle();
+        if (menu.isOpen)
+            menu.actor.navigate_focus(null, St.DirectionType.TAB_FORWARD, false);
+    }
+
     disable() {
+        if (this._settings) {
+            Main.wm.removeKeybinding(OPEN_MENU_KEY);
+            this._settings = null;
+        }
+
         for (const [actor, signalId] of this._signals)
             actor.disconnect(signalId);
 

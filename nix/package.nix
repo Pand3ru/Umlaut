@@ -1,5 +1,5 @@
-# Installs the extension straight from src/; no npm or ZIP step is needed.
-{ lib, stdenvNoCC }:
+# Installs the extension straight from src/; the only build step compiles the GSettings schema.
+{ lib, stdenvNoCC, glib }:
 
 let
   metadata = lib.importJSON ../src/metadata.json;
@@ -11,6 +11,8 @@ stdenvNoCC.mkDerivation {
 
   src = ../src;
 
+  nativeBuildInputs = [ glib ];
+
   dontBuild = true;
 
   installPhase = ''
@@ -19,6 +21,7 @@ stdenvNoCC.mkDerivation {
     extensionDir="$out/share/gnome-shell/extensions/${uuid}"
     mkdir -p "$extensionDir"
     cp -r ./. "$extensionDir"/
+    glib-compile-schemas --strict "$extensionDir/schemas"
 
     runHook postInstall
   '';
@@ -33,6 +36,7 @@ stdenvNoCC.mkDerivation {
     test -f "$extensionDir/metadata.json"
     test -f "$extensionDir/stylesheet.css"
     test -f "$extensionDir/icons/reichstag-dome-symbolic.svg"
+    test -f "$extensionDir/schemas/gschemas.compiled"
 
     runHook postInstallCheck
   '';

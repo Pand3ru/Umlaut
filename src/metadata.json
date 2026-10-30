@@ -1,8 +1,9 @@
 {
   "uuid": "umlaut-panel@local",
   "name": "Umlaut Panel",
-  "description": "Copy ä, ö, ü, Ä, Ö, Ü and ß from a panel popup. Writes the selected character to the clipboard only when you activate its button; does not read clipboard contents.",
+  "description": "Copy ä, ö, ü, Ä, Ö, Ü and ß from a panel popup, opened by click or Super+U. Writes the selected character to the clipboard only when you activate its button or type its key; does not read clipboard contents.",
   "shell-version": ["50", "51"],
-  "version-name": "0.1.1",
+  "version-name": "0.2.0",
+  "settings-schema": "org.gnome.shell.extensions.umlaut-panel",
   "session-modes": ["user"]
 }

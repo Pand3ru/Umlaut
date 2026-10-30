@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.umlaut-panel" path="/org/gnome/shell/extensions/umlaut-panel/">
+    <key name="open-menu" type="as">
+      <default><![CDATA[['<Super>u']]]></default>
+      <summary>Open the character popup</summary>
+      <description>Keyboard shortcut that opens or closes the popup. While it is open, a, o, u and s copy ä, ö, ü and ß; with Shift, Ä, Ö and Ü.</description>
+    </key>
+  </schema>
+</schemalist>

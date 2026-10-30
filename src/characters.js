@@ -2,21 +2,27 @@
 
 export const CHARACTER_GROUPS = Object.freeze([
     Object.freeze([
-        Object.freeze({text: 'ä', name: 'lowercase a with umlaut'}),
-        Object.freeze({text: 'ö', name: 'lowercase o with umlaut'}),
-        Object.freeze({text: 'ü', name: 'lowercase u with umlaut'}),
+        Object.freeze({text: 'ä', key: 'a', name: 'lowercase a with umlaut'}),
+        Object.freeze({text: 'ö', key: 'o', name: 'lowercase o with umlaut'}),
+        Object.freeze({text: 'ü', key: 'u', name: 'lowercase u with umlaut'}),
     ]),
     Object.freeze([
-        Object.freeze({text: 'Ä', name: 'uppercase A with umlaut'}),
-        Object.freeze({text: 'Ö', name: 'uppercase O with umlaut'}),
-        Object.freeze({text: 'Ü', name: 'uppercase U with umlaut'}),
+        Object.freeze({text: 'Ä', key: 'A', name: 'uppercase A with umlaut'}),
+        Object.freeze({text: 'Ö', key: 'O', name: 'uppercase O with umlaut'}),
+        Object.freeze({text: 'Ü', key: 'U', name: 'uppercase U with umlaut'}),
     ]),
     Object.freeze([
-        Object.freeze({text: 'ß', name: 'sharp s'}),
+        Object.freeze({text: 'ß', key: 's', name: 'sharp s'}),
     ]),
 ]);
 
 const supportedCharacters = new Set(CHARACTER_GROUPS.flat().map(({text}) => text));
+const charactersByKey = new Map(CHARACTER_GROUPS.flat().map(({key, text}) => [key, text]));
+
+// Returns the character assigned to a typed key (case-sensitive), or null.
+export function characterForKey(key) {
+    return charactersByKey.get(key) ?? null;
+}
 
 export function selectCharacter(character, writeClipboard, closeMenu) {
     if (!supportedCharacters.has(character))
