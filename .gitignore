@@ -1,0 +1,11 @@
+# Whitelist: only the extension source and what the Nix flake needs are published.
+# Everything else (agent files, npm tooling, tests, license, build output) stays local.
+/*
+!/.gitignore
+!/README.md
+!/flake.nix
+!/flake.lock
+!/src/
+!/nix/
+/nix/*
+!/nix/package.nix

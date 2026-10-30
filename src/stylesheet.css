@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
+.umlaut-character-grid,
+.umlaut-character-row {
+    spacing: 8px;
+}
+
+.umlaut-character-button {
+    min-width: 40px;
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 20pt;
+}
